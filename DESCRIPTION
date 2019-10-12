@@ -1,0 +1,26 @@
+Package: osn
+Title: Easy Access to OpenSkyNetwork Data via (SSH) Impala Session
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Enrico",
+           family = "Spinielli",
+           role = c("aut", "cre"),
+           email = "enrico.spinielli@gmail.com",
+           comment = c(ORCID = "0000-0001-8584-9131"))
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1
+Imports: 
+    janitor,
+    lubridate,
+    purrr,
+    ssh,
+    readr,
+    stringi,
+    stringr,
+    tibble,
+    magrittr,
+    rlang,
+    askpass
