@@ -4,7 +4,8 @@
 \alias{state_vector}
 \title{Get state vectors for a time period}
 \usage{
-state_vector(session, icao24, wef_time, til_time = NULL, bbox = NULL)
+state_vector(session, icao24, wef_time, til_time = NULL, bbox = NULL,
+  debug_level = NULL)
 }
 \arguments{
 \item{session}{SSH session to OSN Impala}
@@ -17,6 +18,10 @@ state_vector(session, icao24, wef_time, til_time = NULL, bbox = NULL)
 
 \item{bbox}{(Optional) axis aligned bounding box
 (lon_min, lat_min, lon_max, lat_max)}
+
+\item{debug_level}{one of "DEBUG", "TRACE" or NULL (default)
+It prints usefult debug info, i.e. input args, query string,
+or traces the query results in the file `query_output.txt`.}
 }
 \value{
 a dataframe of state vectors

@@ -23,6 +23,7 @@ Imports:
     tibble,
     magrittr,
     rlang,
-    askpass
+    askpass,
+    logger
 URL: https://github.com/espinielli/osn
 BugReports: https://github.com/espinielli/osn/issues

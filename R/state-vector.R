@@ -6,6 +6,9 @@
 #' @param til_time (Optional) End of period of interest, if NULL wef_time + 1 day
 #' @param bbox     (Optional) axis aligned bounding box
 #'                 (lon_min, lat_min, lon_max, lat_max)
+#' @param debug_level one of "DEBUG", "TRACE" or NULL (default)
+#'                 It prints usefult debug info, i.e. input args, query string,
+#'                 or traces the query results in the file `query_output.txt`.
 #'
 #' @return a dataframe of state vectors
 #' @export
@@ -23,14 +26,26 @@
 state_vector <- function(session,
                          icao24,
                          wef_time, til_time = NULL,
-                         bbox = NULL
+                         bbox = NULL,
+                         debug_level = NULL
                          ) {
+
+  if (!is.null(debug_level)) {
+    switch (debug_level,
+            "INFO" = {logger::log_threshold(logger::INFO)},
+            "DEBUG" = {logger::log_threshold(logger::DEBUG)},
+            "TRACE" = {logger::log_threshold(logger::TRACE)}
+    )
+  }
+
   wef_time <- lubridate::ymd_hms(wef_time)
+  logger::log_debug('Input argument wef_time = {format(wef_time, "%Y-%m-%d %H:%M:%S")}')
   if (is.null(til_time)) {
     til_time <- wef_time + lubridate::days(1)
   } else {
     til_time <- lubridate::ymd_hms(til_time)
   }
+  logger::log_debug('Input argument til_time = {format(til_time, "%Y-%m-%d %H:%M:%S")}')
   wef_time <- as.numeric(wef_time)
   til_time <- as.numeric(til_time)
   other_params <- " "
@@ -64,7 +79,7 @@ state_vector <- function(session,
     ICAO24 = icao24,
     OTHER_TABLES = "",
     OTHER_PARAMS = other_params)
-
+  logger::log_debug('Impala query = {query}')
   #   | time          | int        |
   #   | icao24        | string     |
   #   | lat           | double     |
@@ -107,6 +122,12 @@ state_vector <- function(session,
   lines <- ssh::ssh_exec_internal(
     session,
     stringr::str_glue("-q {query}", query = query)) %>%
+    { rawToChar(.$stdout) }
+  if (logger::log_threshold() == logger::TRACE) {
+    lines %>%
+      readr::write_lines("query_output.txt")
+  }
+  lines <- lines %>%
     parse_impala_query_output()
   if (length(lines) > 1 ) {
     lines <- lines %>%
