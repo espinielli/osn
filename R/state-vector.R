@@ -100,42 +100,24 @@ state_vector <- function(session,
   #   | hour          | int        |                             |
 
   cols <- readr::cols(
-    .default = readr::col_double(),
-    time = readr::col_integer(),
-    icao24 = readr::col_character(),
-    lat = readr::col_double(),
-    lon = readr::col_double(),
-    velocity = readr::col_double(),
-    heading = readr::col_double(),
-    vertrate = readr::col_double(),
-    callsign = readr::col_character(),
-    onground = readr::col_logical(),
-    alert = readr::col_logical(),
-    spi = readr::col_logical(),
-    squawk = readr::col_character(),
-    baroaltitude = readr::col_double(),
-    geoaltitude = readr::col_double(),
+    .default      = readr::col_double(),
+    time          = readr::col_integer(),
+    icao24        = readr::col_character(),
+    lat           = readr::col_double(),
+    lon           = readr::col_double(),
+    velocity      = readr::col_double(),
+    heading       = readr::col_double(),
+    vertrate      = readr::col_double(),
+    callsign      = readr::col_character(),
+    onground      = readr::col_logical(),
+    alert         = readr::col_logical(),
+    spi           = readr::col_logical(),
+    squawk        = readr::col_character(),
+    baroaltitude  = readr::col_double(),
+    geoaltitude   = readr::col_double(),
     lastposupdate = readr::col_double(),
-    lastcontact = readr::col_double(),
-    hour = readr::col_integer()
+    lastcontact   = readr::col_double(),
+    hour          = readr::col_integer()
   )
-  lines <- ssh::ssh_exec_internal(
-    session,
-    stringr::str_glue("-q {query}", query = query)) %>%
-    { rawToChar(.$stdout) }
-  if (logger::log_threshold() == logger::TRACE) {
-    lines %>%
-      readr::write_lines("query_output.txt")
-  }
-  lines <- lines %>%
-    parse_impala_query_output()
-  if (length(lines) > 1 ) {
-    lines <- lines %>%
-      readr::read_delim(col_types = cols,
-                        delim = "|",
-                        na = c("", "NULL"),
-                        trim_ws = TRUE) %>%
-      janitor::clean_names()
-  }
-  lines
+  query_impala(session, query, cols)
 }
