@@ -9,7 +9,7 @@ parse_impala_query_output <- function(lines) {
     # remove blanks
     stringr::str_replace_all(pattern = "[ ][ ]*", "") %>%
     # remove leading/last '|'
-    stringr::str_replace(pattern = "^\\|", "") %>%
-    stringr::str_replace(pattern = "\\|$", "") %>%
+    stringr::str_replace_all("^[|](.+)[|]$", "\\1") %>%
+    # remove duplicated lines, i.e. repeated column names header
     unique()
 }

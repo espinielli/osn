@@ -131,8 +131,6 @@ state_vector <- function(session,
     parse_impala_query_output()
   if (length(lines) > 1 ) {
     lines <- lines %>%
-      # remove first and last field separator, '|'
-      stringr::str_replace_all("^[|](.+)[|]$", "\\1") %>%
       readr::read_delim(col_types = cols,
                         delim = "|",
                         na = c("", "NULL"),
