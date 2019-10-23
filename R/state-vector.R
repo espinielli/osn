@@ -119,5 +119,5 @@ state_vector <- function(session,
     lastcontact   = readr::col_double(),
     hour          = readr::col_integer()
   )
-  query_impala(session, query, cols)
+  impala_query(session, query, cols)
 }
