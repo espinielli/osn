@@ -74,9 +74,10 @@ operational_status <- function(
 
   query <- stringr::str_glue(
     "SELECT DISTINCT {COLUMNS} FROM operational_status_data4 os {OTHER_TABLES} ",
-    "WHERE os.hour >= {WEFH} and os.hour < {TILH} ",
-    "and os.hour = sv.hour ",
-    "and os.icao24 = sv.icao24 ",
+    "WHERE (os.hour >= {WEFH} AND os.hour < {TILH}) ",
+    "  AND (sv.hour >= {WEFH} AND sv.hour < {TILH}) ",
+    "  AND os.hour = sv.hour ",
+    "  AND os.icao24 = sv.icao24 ",
     "{OTHER_PARAMS} ",
     "{ORDER};",
     # COLUMNS = "os.icao24, os.hour, mintime, maxtime, os.msgcount, os.rawmsg",
