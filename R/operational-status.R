@@ -104,7 +104,13 @@ operational_status <- function(
   #             hour = 1546300800
   #             and ((7.553013 <= lon and lon <= 9.585482) and (49.378819 <= lat and lat <= 50.688044))
   #   );
-
+  cols <- readr::cols(
+    .default      = readr::col_double(),
+    icao24        = readr::col_character(),
+    rawmsg        = readr::col_character(),
+    hour          = readr::col_integer()
+  )
+  impala_query(session, query, cols)
 }
 
 # [hadoop-1:21000] > describe operational_status_data4;
