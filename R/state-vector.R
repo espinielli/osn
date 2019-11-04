@@ -4,8 +4,8 @@
 #' @param icao24   (Optional) Single or vector of ICAO24 ICAO 24-bit addresses
 #' @param wef_time Start of period of interest
 #' @param til_time (Optional) End of period of interest, if NULL wef_time + 1 day
-#' @param bbox     (Optional) axis aligned bounding box
-#'                 (lon_min, lat_min, lon_max, lat_max)
+#' @param bbox     (Optional) axis aligned bounding box like
+#'                 `c(xmin, xmax, ymin, ymax)`
 #' @param debug_level one of "DEBUG", "TRACE" or NULL (default)
 #'                 It prints usefult debug info, i.e. input args, query string,
 #'                 or traces the query results in the file `query_output.txt`.
@@ -62,10 +62,10 @@ state_vector <- function(session,
     other_params <- stringr::str_glue(
       other_params,
       " AND (({lon_min} <= lon AND lon <={lon_max}) AND ({lat_min} <= lat AND lat <={lat_max}))",
-      lon_min = bbox[1],
-      lon_max = bbox[3],
-      lat_min = bbox[2],
-      lat_max = bbox[4])
+      lon_min = bbox["xmin"],
+      lon_max = bbox["xmax"],
+      lat_min = bbox["ymin"],
+      lat_max = bbox["ymax"])
   }
 
   query <- stringr::str_glue(
@@ -129,8 +129,8 @@ state_vector <- function(session,
 #' @param icao24   (Optional) Single or vector of ICAO24 ICAO 24-bit addresses
 #' @param wef_time Start of period of interest
 #' @param til_time (Optional) End of period of interest, if NULL wef_time + 1 day
-#' @param bbox     (Optional) axis aligned bounding box
-#'                 (lon_min, lat_min, lon_max, lat_max)
+#' @param bbox     (Optional) axis aligned bounding box like
+#'                 `c(xmin, xmax, ymin, ymax)`
 #' @param debug_level one of "DEBUG", "TRACE" or NULL (default)
 #'                 It prints usefult debug info, i.e. input args, query string,
 #'                 or traces the query results in the file `query_output.txt`.
@@ -187,10 +187,10 @@ minimal_state_vector <- function(session,
     other_params <- stringr::str_glue(
       other_params,
       " AND (({lon_min} <= lon AND lon <={lon_max}) AND ({lat_min} <= lat AND lat <={lat_max}))",
-      lon_min = bbox[1],
-      lon_max = bbox[3],
-      lat_min = bbox[2],
-      lat_max = bbox[4])
+      lon_min = bbox["xmin"],
+      lon_max = bbox["xmax"],
+      lat_min = bbox["ymin"],
+      lat_max = bbox["ymax"])
   }
 
   query <- stringr::str_glue(
