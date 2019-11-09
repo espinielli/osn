@@ -12,7 +12,7 @@
 #' }
 connect_osn <- function(usr, passwd = askpass, verbose = FALSE) {
   host <- stringr::str_glue("{usr}@data.opensky-network.org:2230", usr = usr)
-  ssh::ssh_connect(host, verbose = verbose)
+  ssh::ssh_connect(host, password = password, verbose = verbose)
 }
 
 #' Disconnect from OpenSky Network’s Impala shell.
