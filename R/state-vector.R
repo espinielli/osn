@@ -234,3 +234,170 @@ minimal_state_vector <- function(session,
   )
   impala_query(session, query, cols)
 }
+
+
+#' Get state vectors for arrivals at airport
+#'
+#' Retrive state vectors for all flights from flights table
+#'
+#' @param session SSH session to OSN Impala
+#' @param apt ICAO ID of airport, i.e. "EDDF" for Frankfurt
+#' @param wef (UTC) timestamp of With Effect From (included)
+#' @param til (UTC) timestamp of TILl instant (excluded), if NULL
+#'            if is interpreted as WEF + 1 day.
+#'
+#' @return data frame of state vector data of flights containing the following
+#'         variables (see also OSN docs about
+#'   \href{https://opensky-network.org/apidoc/rest.html#arrivals-by-airport}{Arrivals
+#'    by Airport}):
+#'    \tabular{lll}{
+#'      \strong{Name}       \tab \strong{Description} \tab \strong{Type} \cr
+#'      icao24              \tab ICAO 24-bit address \tab chr \cr
+#'      callsign            \tab flight's callsign   \tab chr \cr
+#'      day                 \tab flight's day  \tab int \cr
+#'      firstseen           \tab first seen by OpenSky Network (UNIX timestamp)\tab int \cr
+#'      lastseen            \tab last seen by OpenSky Network (UNIX timestamp) \tab int \cr
+#'      estdepartureairport \tab Estimated departure airport \tab chr \cr
+#'      estarrivalairport   \tab Estimated arrival airport   \tab chr \cr
+#'      item.time           \tab position report's time (UNIX timestamp) \tab int \cr
+#'      item.longitude      \tab position report's longitude (WSG84 decimal degrees)\tab dbl \cr
+#'      item.latitude       \tab position report's latitude (WSG84 decimal degrees) \tab dbl \cr
+#'      item.altitude       \tab position report's barometric altitude (meters) \tab dbl \cr
+#'      item.heading        \tab true track in decimal degrees clockwise from north (north=0°) \tab dbl \cr
+#'      item.onground       \tab TRUE if the position was retrieved from a surface position report \tab lgl
+#'    }
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' session <- connect_osn("cucu", verbose = 2)
+#' arrivals_state_vector(session, "EDDF", "2019-04-22 00:00:00", til=NULL)
+#' }
+arrivals_state_vector <- function(session, apt, wef, til=NULL, debug_level = NULL) {
+  if (!is.null(debug_level)) {
+    switch (debug_level,
+            "INFO" = {logger::log_threshold(logger::INFO)},
+            "DEBUG" = {logger::log_threshold(logger::DEBUG)},
+            "TRACE" = {logger::log_threshold(logger::TRACE)}
+    )
+  }
+
+  wef <- lubridate::as_datetime(wef)
+  if (is.null(til)) {
+    til <- wefh + lubridate::days(1)
+  } else {
+    til <- lubridate::as_datetime(til)
+  }
+  wef <- wef %>% as.integer()
+  til <- til %>% as.integer()
+  # floor to POSIX hour
+  wefh <- wef - (wef %% 3600)
+  tilh <- til - (til %% 3600)
+  # floor to POSIX day
+  wefd <- wefh - (wefh %% 86400)
+  tild <- tilh - (tilh %% 86400)
+
+  # NOTE: less or equal (<=) is ESSENTIAL in WHERE clause for `day`
+  query <- stringr::str_glue(
+    "WITH fl AS (
+    -- consider all the arrivals at APT on the days of interest
+    SELECT
+      icao24, callsign, day, firstseen, lastseen, estdepartureairport, estarrivalairport
+    FROM
+      flights_data4
+    WHERE
+      estarrivalairport LIKE '%{APT}%'
+      AND (({WEF} <= lastseen) AND (lastseen <  {TIL}))
+      AND (({WEFD} <= day) AND (day <=  {TILD}))
+    )
+  -- get all portions of state vector within the interval of interest
+  SELECT
+    sv.icao24, sv.callsign,
+    fl.estdepartureairport, fl.estarrivalairport,
+    fl.firstseen, fl.lastseen,
+    sv.time, sv.lon longitude, sv.lat latitude, sv.velocity, sv.heading, sv.vertrate,
+    sv.onground, sv.baroaltitude, sv.geoaltitude,
+    sv.hour
+  FROM
+    state_vectors_data4 sv, fl
+  WHERE
+    (({WEFH} <= sv.hour) AND (sv.hour < {TILH}))
+    AND (({WEF} <= sv.time) AND (sv.time < {TIL}))
+    AND sv.icao24 = fl.icao24;",
+    APT = apt,
+    WEF = wef,
+    WEFH = wefh,
+    WEFD = wefd,
+    TIL = til,
+    TILH = tilh,
+    TILD = tild)
+
+  logger::log_debug('Impala query = {query}')
+return()
+  cmd <-stringr::str_glue("-q {query}", query = query)
+  lines <- ssh::ssh_exec_internal(session, cmd) %>%
+    { rawToChar(.$stdout)} %>%
+    stringi::stri_split_lines(omit_empty = TRUE)
+
+  # create an empty dataframe to return in case of empty query
+  values <- tibble::tibble(
+    icao24              = character(),
+    callsign            = character(),
+    estdepartureairport = character(),
+    estarrivalairport   = character(),
+    firstseen           = double(),
+    lastseen            = double(),
+    time                = double(),
+    longitude           = double(),
+    latitude            = double(),
+    velocity            = double(),
+    heading             = double(),
+    vertrate            = double(),
+    onground            = logical(),
+    baroaltitude        = double(),
+    geoaltitude         = double(),
+    hour                = double()
+  )
+  if (length(lines) >= 1) {
+    lines <- lines %>%
+      purrr::flatten_chr() %>%
+      # match all lines starting w/ '|'
+      stringr::str_subset(pattern = "^\\|")
+    if (length(lines) >= 1) {
+      lines <- lines %>%
+        # remove first and last field separator, '|'
+        stringr::str_replace_all("^[|](.+)[|]$", "\\1") %>%
+        stringr::str_replace_all("\\s*\\|\\s*", ",") %>%
+        stringr::str_trim(side = "both")
+
+      # remove duplicated heading (with column names)
+      values_to_parse <- lines[!duplicated(lines)]
+      cols <- readr::cols(
+        icao24              = readr::col_character(),
+        callsign            = readr::col_character(),
+        estdepartureairport = readr::col_character(),
+        estarrivalairport   = readr::col_character(),
+        firstseen           = readr::col_double(),
+        lastseen            = readr::col_double(),
+        time                = readr::col_double(),
+        longitude           = readr::col_double(),
+        latitude            = readr::col_double(),
+        velocity            = readr::col_double(),
+        heading             = readr::col_double(),
+        vertrate            = readr::col_double(),
+        onground            = readr::col_logical(),
+        baroaltitude        = readr::col_double(),
+        geoaltitude         = readr::col_double(),
+        hour                = readr::col_double()
+      )
+      values <- values_to_parse %>%
+        readr::read_csv(
+          na = c("", "NULL"),
+          col_types = cols) %>%
+        janitor::clean_names()
+    }
+  }
+  values
+}
+
