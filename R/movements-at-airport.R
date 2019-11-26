@@ -1,4 +1,4 @@
-#' Get arrivals at airport
+#' Get arrival tracks at airport
 #'
 #' @param session SSH session to OSN Impala
 #' @param apt ICAO ID of airport, i.e. "EDDF" for Frankfurt
@@ -7,7 +7,7 @@
 #'            if is interpreted as WEF + 1 day.
 #'
 #' @return data frame of flight and track data containing the following
-#'         variable (see also OSN docs about
+#'         variables (see also OSN docs about
 #'   \href{https://opensky-network.org/apidoc/rest.html#arrivals-by-airport}{Arrivals
 #'    by Airport}):
 #'    \tabular{lll}{
