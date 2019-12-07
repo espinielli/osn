@@ -245,6 +245,7 @@ minimal_state_vector <- function(session,
 #' @param wef (UTC) timestamp of With Effect From (included)
 #' @param til (UTC) timestamp of TILl instant (excluded), if NULL
 #'            if is interpreted as WEF + 1 day.
+#' @param duration number of second back from `lastseen`
 #'
 #' @return data frame of state vector data of flights containing the following
 #'         variables (see also OSN docs about
@@ -274,7 +275,10 @@ minimal_state_vector <- function(session,
 #' session <- connect_osn("cucu", verbose = 2)
 #' arrivals_state_vector(session, "EDDF", "2019-04-22 00:00:00", til=NULL)
 #' }
-arrivals_state_vector <- function(session, apt, wef, til=NULL, debug_level = NULL) {
+arrivals_state_vector <- function(
+  session,
+  apt, wef, til = NULL, duration = 3600,
+  debug_level = NULL) {
   if (!is.null(debug_level)) {
     switch (debug_level,
             "INFO" = {logger::log_threshold(logger::INFO)},
@@ -297,33 +301,42 @@ arrivals_state_vector <- function(session, apt, wef, til=NULL, debug_level = NUL
   # floor to POSIX day
   wefd <- wefh - (wefh %% 86400)
   tild <- tilh - (tilh %% 86400)
+  minimum <- wefh - duration
 
   # NOTE: less or equal (<=) is ESSENTIAL in WHERE clause for `day`
   query <- stringr::str_glue(
     "WITH fl AS (
-    -- consider all the arrivals at APT on the days of interest
-    SELECT
-      icao24, callsign, day, firstseen, lastseen, estdepartureairport, estarrivalairport
-    FROM
-      flights_data4
-    WHERE
-      estarrivalairport LIKE '%{APT}%'
-      AND (({WEF} <= lastseen) AND (lastseen <  {TIL}))
-      AND (({WEFD} <= day) AND (day <=  {TILD}))
-    )
+      -- consider all the arrivals at APT on the interval [WEF, TIL) of interest
+      SELECT
+        icao24, callsign, day,
+        firstseen, lastseen,
+        if(lastseen - {DURATION} < firstseen, firstseen, lastseen - {DURATION}) start,
+        estdepartureairport, estarrivalairport
+      FROM
+        flights_data4
+      WHERE
+        estarrivalairport LIKE '%{APT}%'
+        AND (({WEF}  <= lastseen) AND (lastseen <  {TIL}))
+        AND (({WEFD} <= day)      AND (day      <= {TILD}))
+      )
   -- get all portions of state vector within the interval of interest
   SELECT
     sv.icao24, sv.callsign,
     fl.estdepartureairport, fl.estarrivalairport,
-    fl.firstseen, fl.lastseen,
+    fl.start, fl.firstseen, fl.lastseen,
     sv.time, sv.lon longitude, sv.lat latitude, sv.velocity, sv.heading, sv.vertrate,
     sv.onground, sv.baroaltitude, sv.geoaltitude,
     sv.hour
   FROM
     state_vectors_data4 sv, fl
   WHERE
-    (({WEFH} <= sv.hour) AND (sv.hour < {TILH}))
-    AND (({WEF} <= sv.time) AND (sv.time < {TIL}))
+    -- IMPORTANT to reduce memory (file scan) for query
+    -- we use as MINIMUM as the floor HOUR of WEF minus DURATION
+    -- and as MAXIMUN the TIL hour
+    (({MINIMUM} <= sv.hour) AND (sv.hour < {TILH}))
+    -- retrieve only the sv portion from START to LASTSEEN
+    AND ((fl.start <= sv.time) AND (sv.time <= fl.lastseen))
+    -- olny for the relevant arrivals as from FL
     AND sv.icao24 = fl.icao24;",
     APT = apt,
     WEF = wef,
@@ -331,10 +344,12 @@ arrivals_state_vector <- function(session, apt, wef, til=NULL, debug_level = NUL
     WEFD = wefd,
     TIL = til,
     TILH = tilh,
-    TILD = tild)
+    TILD = tild,
+    DURATION = duration,
+    MINIMUM = minimum)
 
   logger::log_debug('Impala query = {query}')
-return()
+
   cmd <-stringr::str_glue("-q {query}", query = query)
   lines <- ssh::ssh_exec_internal(session, cmd) %>%
     { rawToChar(.$stdout)} %>%
@@ -346,6 +361,7 @@ return()
     callsign            = character(),
     estdepartureairport = character(),
     estarrivalairport   = character(),
+    start               = double(),
     firstseen           = double(),
     lastseen            = double(),
     time                = double(),
@@ -395,7 +411,8 @@ return()
         readr::read_csv(
           na = c("", "NULL"),
           col_types = cols) %>%
-        janitor::clean_names()
+        janitor::clean_names() %>%
+        tibble::as_tibble()
     }
   }
   values
