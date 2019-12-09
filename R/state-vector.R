@@ -331,7 +331,7 @@ arrivals_state_vector <- function(
     state_vectors_data4 sv, fl
   WHERE
     -- IMPORTANT to reduce memory (file scan) for query
-    -- we use as MINIMUM as the floor HOUR of WEF minus DURATION
+    -- we use as MINIMUM the (floor of) HOUR for WEF minus DURATION
     -- and as MAXIMUN the TIL hour
     (({MINIMUM} <= sv.hour) AND (sv.hour < {TILH}))
     -- retrieve only the sv portion from START to LASTSEEN
