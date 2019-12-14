@@ -30,7 +30,7 @@ state_vector <- function(session,
                          bbox = NULL,
                          debug_level = NULL
                          ) {
-
+  # TODO: see arrivals_state_vector
   if (!is.null(debug_level)) {
     switch (debug_level,
             "INFO" = {logger::log_threshold(logger::INFO)},
@@ -69,39 +69,30 @@ state_vector <- function(session,
       lat_max = bbox["ymax"])
   }
 
-  query <- stringr::str_glue(
-    "SELECT {COLUMNS} FROM state_vectors_data4 {OTHER_TABLES} ",
-    "WHERE hour >= {WEFH} and hour < {TILH} ",
-    # "and time >= {WEFT} and time < {WEFT} ",
-    "{OTHER_PARAMS};",
-    COLUMNS = "*",
-    WEFH = wef_time,
-    TILH = til_time,
-    ICAO24 = icao24,
-    OTHER_TABLES = "",
-    OTHER_PARAMS = other_params)
-  logger::log_debug('Impala query = {query}')
-  #   | time          | int        |
-  #   | icao24        | string     |
-  #   | lat           | double     |
-  #   | lon           | double     |
-  #   | velocity      | double     |
-  #   | heading       | double     |
-  #   | vertrate      | double     |
-  #   | callsign      | string     |
-  #   | onground      | boolean    |
-  #   | alert         | boolean    |
-  #   | spi           | boolean    |
-  #   | squawk        | string     |
-  #   | baroaltitude  | double     |
-  #   | geoaltitude   | double     |
-  #   | lastposupdate | double     |
-  #   | lastcontact   | double     |
-  #   | serials       | array<int> |
-  #   | hour          | int        |                             |
-
+  # [hadoop-1:21000] > describe state_vectors_data4;
+  # +---------------+------------+-----------------------------+
+  # | name          | type       | comment                     |
+  # +---------------+------------+-----------------------------+
+  # | time          | int        | Inferred from Parquet file. |
+  # | icao24        | string     | Inferred from Parquet file. |
+  # | lat           | double     | Inferred from Parquet file. |
+  # | lon           | double     | Inferred from Parquet file. |
+  # | velocity      | double     | Inferred from Parquet file. |
+  # | heading       | double     | Inferred from Parquet file. |
+  # | vertrate      | double     | Inferred from Parquet file. |
+  # | callsign      | string     | Inferred from Parquet file. |
+  # | onground      | boolean    | Inferred from Parquet file. |
+  # | alert         | boolean    | Inferred from Parquet file. |
+  # | spi           | boolean    | Inferred from Parquet file. |
+  # | squawk        | string     | Inferred from Parquet file. |
+  # | baroaltitude  | double     | Inferred from Parquet file. |
+  # | geoaltitude   | double     | Inferred from Parquet file. |
+  # | lastposupdate | double     | Inferred from Parquet file. |
+  # | lastcontact   | double     | Inferred from Parquet file. |
+  # | serials       | array<int> | Inferred from Parquet file. |
+  # | hour          | int        |                             |
+  # +---------------+------------+-----------------------------+
   cols <- readr::cols(
-    .default      = readr::col_double(),
     time          = readr::col_integer(),
     icao24        = readr::col_character(),
     lat           = readr::col_double(),
@@ -120,6 +111,20 @@ state_vector <- function(session,
     lastcontact   = readr::col_double(),
     hour          = readr::col_integer()
   )
+
+  query <- stringr::str_glue(
+    "SELECT {COLUMNS} FROM state_vectors_data4 {OTHER_TABLES} ",
+    "WHERE hour >= {WEFH} and hour < {TILH} ",
+    # "and time >= {WEFT} and time < {WEFT} ",
+    "{OTHER_PARAMS};",
+    COLUMNS = paste(columns, collapse = ", "),
+    WEFH = wef_time,
+    TILH = til_time,
+    ICAO24 = icao24,
+    OTHER_TABLES = "",
+    OTHER_PARAMS = other_params)
+  logger::log_debug('Impala query = {query}')
+
   impala_query(session, query, cols)
 }
 
@@ -207,27 +212,8 @@ minimal_state_vector <- function(session,
     OTHER_TABLES = "",
     OTHER_PARAMS = other_params)
   logger::log_debug('Impala query = {query}')
-  #   | time          | int        |
-  #   | icao24        | string     |
-  #   | lat           | double     |
-  #   | lon           | double     |
-  #   | velocity      | double     |
-  #   | heading       | double     |
-  #   | vertrate      | double     |
-  #   | callsign      | string     |
-  #   | onground      | boolean    |
-  #   | alert         | boolean    |
-  #   | spi           | boolean    |
-  #   | squawk        | string     |
-  #   | baroaltitude  | double     |
-  #   | geoaltitude   | double     |
-  #   | lastposupdate | double     |
-  #   | lastcontact   | double     |
-  #   | serials       | array<int> |
-  #   | hour          | int        |                             |
 
   cols <- readr::cols(
-    .default      = readr::col_double(),
     icao24        = readr::col_character(),
     callsign      = readr::col_character(),
     hour          = readr::col_integer()
@@ -279,6 +265,7 @@ arrivals_state_vector <- function(
   session,
   apt, wef, til = NULL, duration = 3600,
   debug_level = NULL) {
+  # TODO: this is NOT correct, maybe better with_threshold_level()
   if (!is.null(debug_level)) {
     switch (debug_level,
             "INFO" = {logger::log_threshold(logger::INFO)},
@@ -350,71 +337,24 @@ arrivals_state_vector <- function(
 
   logger::log_debug('Impala query = {query}')
 
-  cmd <-stringr::str_glue("-q {query}", query = query)
-  lines <- ssh::ssh_exec_internal(session, cmd) %>%
-    { rawToChar(.$stdout)} %>%
-    stringi::stri_split_lines(omit_empty = TRUE)
-
-  # create an empty dataframe to return in case of empty query
-  values <- tibble::tibble(
-    icao24              = character(),
-    callsign            = character(),
-    estdepartureairport = character(),
-    estarrivalairport   = character(),
-    start               = double(),
-    firstseen           = double(),
-    lastseen            = double(),
-    time                = double(),
-    longitude           = double(),
-    latitude            = double(),
-    velocity            = double(),
-    heading             = double(),
-    vertrate            = double(),
-    onground            = logical(),
-    baroaltitude        = double(),
-    geoaltitude         = double(),
-    hour                = double()
+  cols <- readr::cols(
+    icao24              = readr::col_character(),
+    callsign            = readr::col_character(),
+    estdepartureairport = readr::col_character(),
+    estarrivalairport   = readr::col_character(),
+    firstseen           = readr::col_double(),
+    lastseen            = readr::col_double(),
+    time                = readr::col_double(),
+    longitude           = readr::col_double(),
+    latitude            = readr::col_double(),
+    velocity            = readr::col_double(),
+    heading             = readr::col_double(),
+    vertrate            = readr::col_double(),
+    onground            = readr::col_logical(),
+    baroaltitude        = readr::col_double(),
+    geoaltitude         = readr::col_double(),
+    hour                = readr::col_double()
   )
-  if (length(lines) >= 1) {
-    lines <- lines %>%
-      purrr::flatten_chr() %>%
-      # match all lines starting w/ '|'
-      stringr::str_subset(pattern = "^\\|")
-    if (length(lines) >= 1) {
-      lines <- lines %>%
-        # remove first and last field separator, '|'
-        stringr::str_replace_all("^[|](.+)[|]$", "\\1") %>%
-        stringr::str_replace_all("\\s*\\|\\s*", ",") %>%
-        stringr::str_trim(side = "both")
-
-      # remove duplicated heading (with column names)
-      values_to_parse <- lines[!duplicated(lines)]
-      cols <- readr::cols(
-        icao24              = readr::col_character(),
-        callsign            = readr::col_character(),
-        estdepartureairport = readr::col_character(),
-        estarrivalairport   = readr::col_character(),
-        firstseen           = readr::col_double(),
-        lastseen            = readr::col_double(),
-        time                = readr::col_double(),
-        longitude           = readr::col_double(),
-        latitude            = readr::col_double(),
-        velocity            = readr::col_double(),
-        heading             = readr::col_double(),
-        vertrate            = readr::col_double(),
-        onground            = readr::col_logical(),
-        baroaltitude        = readr::col_double(),
-        geoaltitude         = readr::col_double(),
-        hour                = readr::col_double()
-      )
-      values <- values_to_parse %>%
-        readr::read_csv(
-          na = c("", "NULL"),
-          col_types = cols) %>%
-        janitor::clean_names() %>%
-        tibble::as_tibble()
-    }
-  }
-  values
+  impala_query(session, query, cols)
 }
 

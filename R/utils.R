@@ -27,13 +27,15 @@ impala_query <- function(session, query, cols) {
   }
   lines <- lines %>%
     parse_impala_query_output()
-  if (length(lines) > 1 ) {
-    lines <- lines %>%
-      readr::read_delim(col_types = cols,
-                        delim = "|",
-                        na = c("", "NULL"),
-                        trim_ws = TRUE) %>%
-      janitor::clean_names()
-  }
-  lines
+
+  # make a 1 line data so to return an empty tibble in case of empty Impala result
+  if (length(lines) == 0) lines <- paste0(paste(names(cols$cols), collapse = "|"),
+                                          "\n")
+
+  lines %>%
+    readr::read_delim(col_types = cols,
+                      delim = "|",
+                      na = c("", "NULL"),
+                      trim_ws = TRUE) %>%
+    janitor::clean_names()
 }
