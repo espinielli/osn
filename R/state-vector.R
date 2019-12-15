@@ -25,8 +25,6 @@ state_vector <- function(session,
                          wef, til = NULL,
                          bbox = NULL
                          ) {
-  stopifnot(class(session) == "ssh_session")
-
   wef <- lubridate::as_datetime(wef)
   stopifnot(class(wef) %in% c("POSIXct", "POSIXt"))
 
@@ -148,8 +146,6 @@ minimal_state_vector <- function(session,
                          wef, til = NULL,
                          bbox = NULL
 ) {
-  stopifnot(class(session) == "ssh_session")
-
   wef_time <- lubridate::as_datetime(wef)
   stopifnot(class(wef) %in% c("POSIXct", "POSIXt"))
 
@@ -249,8 +245,6 @@ arrivals_state_vector <- function(
   session,
   apt, wef, til = NULL,
   duration = 3600) {
-  stopifnot(class(session) == "ssh_session")
-
   wef <- lubridate::as_datetime(wef)
   stopifnot(class(wef) %in% c("POSIXct", "POSIXt"))
   if (is.null(til)) {

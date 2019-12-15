@@ -16,6 +16,7 @@ parse_impala_query_output <- function(lines) {
 
 
 impala_query <- function(session, query, cols) {
+  stopifnot(class(session) == "ssh_session")
   stopifnot(!is.null(cols))
   lines <- ssh::ssh_exec_internal(
     session,
