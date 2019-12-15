@@ -4,8 +4,14 @@
 \alias{operational_status}
 \title{Get operational status for a time period}
 \usage{
-operational_status(session, icao24, wef_time, til_time = NULL,
-  bbox = NULL, debug_level = NULL)
+operational_status(
+  session,
+  icao24,
+  wef_time,
+  til_time = NULL,
+  bbox = NULL,
+  debug_level = NULL
+)
 }
 \arguments{
 \item{session}{SSH session to OSN Impala}

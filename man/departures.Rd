@@ -17,7 +17,7 @@ departures(session, apt, wef, til = NULL)
 }
 \value{
 data frame of flight and track data containing the following
-        variable (see also OSN docs about
+        variables (see also OSN docs about
   \href{https://opensky-network.org/apidoc/rest.html#arrivals-by-airport}{Arrivals
    by Airport}):
    \tabular{lll}{

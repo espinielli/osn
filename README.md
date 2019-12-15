@@ -25,6 +25,27 @@ And the development version from [GitHub](https://github.com/) with:
 devtools::install_github("espinielli/osn")
 ```
 
+## Configuration
+
+`osn` uses the `logger` package to write log messages to the console by
+default with the following log level standards:
+
+    TRACE writes the query results in the file `query_output.txt`.
+    DEBUG logs the Impala query being submitted.
+    INFO currently not used
+    WARN currently not used
+    ERROR currently not used
+    FATAL currently not used
+
+If you want to update the default log level threshold, use the package
+name for the namespace argument of `log_threshold` from the `logger`
+package, e.g. to enable all log messages:
+
+``` r
+library(logger)
+log_threshold(TRACE, namespace = 'osn')
+```
+
 ## Example
 
 The following example shows how to retieve one hour worth of State

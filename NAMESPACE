@@ -3,6 +3,7 @@
 export("%>%")
 export(.data)
 export(arrivals)
+export(arrivals_state_vector)
 export(askpass)
 export(connect_osn)
 export(departures)

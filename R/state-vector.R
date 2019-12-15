@@ -2,14 +2,10 @@
 #'
 #' @param session  SSH session to OSN Impala
 #' @param icao24   (Optional) Single or vector of ICAO24 ICAO 24-bit addresses
-#' @param wef_time Start of period of interest
-#' @param til_time (Optional) End of period of interest, if NULL wef_time + 1 day
+#' @param wef      Start of period of interest (date or datetime)
+#' @param til      (Optional) End of period of interest, if NULL wef_time + 1 day
 #' @param bbox     (Optional) axis aligned bounding box like
 #'                 `c(xmin, xmax, ymin, ymax)`
-#' @param debug_level one of "DEBUG", "TRACE" or NULL (default)
-#'                 It prints usefult debug info, i.e. input args, query string,
-#'                 or traces the query results in the file `query_output.txt`.
-#'
 #' @return a dataframe of state vectors
 #' @export
 #'
@@ -26,29 +22,24 @@
 #' }
 state_vector <- function(session,
                          icao24,
-                         wef_time, til_time = NULL,
-                         bbox = NULL,
-                         debug_level = NULL
+                         wef, til = NULL,
+                         bbox = NULL
                          ) {
-  # TODO: see arrivals_state_vector
-  if (!is.null(debug_level)) {
-    switch (debug_level,
-            "INFO" = {logger::log_threshold(logger::INFO)},
-            "DEBUG" = {logger::log_threshold(logger::DEBUG)},
-            "TRACE" = {logger::log_threshold(logger::TRACE)}
-    )
-  }
+  stopifnot(class(session) == "ssh_session")
 
-  wef_time <- lubridate::ymd_hms(wef_time)
-  logger::log_debug('Input argument wef_time = {format(wef_time, "%Y-%m-%d %H:%M:%S")}')
-  if (is.null(til_time)) {
-    til_time <- wef_time + lubridate::days(1)
+  wef <- lubridate::as_datetime(wef)
+  stopifnot(class(wef) %in% c("POSIXct", "POSIXt"))
+
+  if (is.null(til)) {
+    til <- wef + lubridate::days(1)
   } else {
-    til_time <- lubridate::ymd_hms(til_time)
+    til <- lubridate::as_datetime(til)
   }
-  logger::log_debug('Input argument til_time = {format(til_time, "%Y-%m-%d %H:%M:%S")}')
-  wef_time <- as.numeric(wef_time)
-  til_time <- as.numeric(til_time)
+  logger::log_trace('Input argument wef = {format(wef, "%Y-%m-%d %H:%M:%S")}')
+  logger::log_trace('Input argument til = {format(til, "%Y-%m-%d %H:%M:%S")}')
+
+  wef <- as.numeric(wef)
+  til <- as.numeric(til)
   other_params <- " "
 
   if (!is.null(icao24)) {
@@ -118,8 +109,8 @@ state_vector <- function(session,
     # "and time >= {WEFT} and time < {WEFT} ",
     "{OTHER_PARAMS};",
     COLUMNS = paste(names(cols$cols), collapse = ", "),
-    WEFH = wef_time,
-    TILH = til_time,
+    WEFH = wef,
+    TILH = til,
     ICAO24 = icao24,
     OTHER_TABLES = "",
     OTHER_PARAMS = other_params)
@@ -133,13 +124,10 @@ state_vector <- function(session,
 #'
 #' @param session  SSH session to OSN Impala
 #' @param icao24   (Optional) Single or vector of ICAO24 ICAO 24-bit addresses
-#' @param wef_time Start of period of interest
-#' @param til_time (Optional) End of period of interest, if NULL wef_time + 1 day
+#' @param wef      Start of period of interest (date or datetime)
+#' @param til      (Optional) End of period of interest, if NULL wef_time + 1 day
 #' @param bbox     (Optional) axis aligned bounding box like
 #'                 `c(xmin, xmax, ymin, ymax)`
-#' @param debug_level one of "DEBUG", "TRACE" or NULL (default)
-#'                 It prints usefult debug info, i.e. input args, query string,
-#'                 or traces the query results in the file `query_output.txt`.
 #'
 #' @return a dataframe of state vectors with distinct icao24, callsign and hour
 #' @export
@@ -157,29 +145,25 @@ state_vector <- function(session,
 #' }
 minimal_state_vector <- function(session,
                          icao24,
-                         wef_time, til_time = NULL,
-                         bbox = NULL,
-                         debug_level = NULL
+                         wef, til = NULL,
+                         bbox = NULL
 ) {
+  stopifnot(class(session) == "ssh_session")
 
-  if (!is.null(debug_level)) {
-    switch (debug_level,
-            "INFO" = {logger::log_threshold(logger::INFO)},
-            "DEBUG" = {logger::log_threshold(logger::DEBUG)},
-            "TRACE" = {logger::log_threshold(logger::TRACE)}
-    )
-  }
+  wef_time <- lubridate::as_datetime(wef)
+  stopifnot(class(wef) %in% c("POSIXct", "POSIXt"))
 
-  wef_time <- lubridate::ymd_hms(wef_time)
-  logger::log_debug('Input argument wef_time = {format(wef_time, "%Y-%m-%d %H:%M:%S")}')
-  if (is.null(til_time)) {
-    til_time <- wef_time + lubridate::days(1)
+  if (is.null(til)) {
+    til <- wef + lubridate::days(1)
   } else {
-    til_time <- lubridate::ymd_hms(til_time)
+    til <- lubridate::as_datetime(til)
+    stopifnot(class(til) %in% c("POSIXct", "POSIXt"))
   }
-  logger::log_debug('Input argument til_time = {format(til_time, "%Y-%m-%d %H:%M:%S")}')
-  wef_time <- as.numeric(wef_time)
-  til_time <- as.numeric(til_time)
+  logger::log_debug('Input argument wef = {format(wef, "%Y-%m-%d %H:%M:%S")}')
+  logger::log_debug('Input argument til = {format(til, "%Y-%m-%d %H:%M:%S")}')
+
+  wef <- as.numeric(wef)
+  til <- as.numeric(til)
   other_params <- " "
 
   if (!is.null(icao24)) {
@@ -206,8 +190,8 @@ minimal_state_vector <- function(session,
     # "and time >= {WEFT} and time < {WEFT} ",
     "{OTHER_PARAMS};",
     COLUMNS = "DISTINCT icao24, callsign, hour",
-    WEFH = wef_time,
-    TILH = til_time,
+    WEFH = wef,
+    TILH = til,
     ICAO24 = icao24,
     OTHER_TABLES = "",
     OTHER_PARAMS = other_params)
@@ -263,23 +247,20 @@ minimal_state_vector <- function(session,
 #' }
 arrivals_state_vector <- function(
   session,
-  apt, wef, til = NULL, duration = 3600,
-  debug_level = NULL) {
-  # TODO: this is NOT correct, maybe better with_threshold_level()
-  if (!is.null(debug_level)) {
-    switch (debug_level,
-            "INFO" = {logger::log_threshold(logger::INFO)},
-            "DEBUG" = {logger::log_threshold(logger::DEBUG)},
-            "TRACE" = {logger::log_threshold(logger::TRACE)}
-    )
-  }
+  apt, wef, til = NULL,
+  duration = 3600) {
+  stopifnot(class(session) == "ssh_session")
 
   wef <- lubridate::as_datetime(wef)
+  stopifnot(class(wef) %in% c("POSIXct", "POSIXt"))
   if (is.null(til)) {
-    til <- wefh + lubridate::days(1)
+    til <- wef + lubridate::days(1)
   } else {
     til <- lubridate::as_datetime(til)
+    stopifnot(class(til) %in% c("POSIXct", "POSIXt"))
   }
+  logger::log_trace('Input argument wef = {format(wef, "%Y-%m-%d %H:%M:%S")}')
+  logger::log_trace('Input argument til = {format(til, "%Y-%m-%d %H:%M:%S")}')
   wef <- wef %>% as.integer()
   til <- til %>% as.integer()
   # floor to POSIX hour

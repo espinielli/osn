@@ -4,24 +4,19 @@
 \alias{minimal_state_vector}
 \title{Get few state vector's attributes for a time period (listing who was present)}
 \usage{
-minimal_state_vector(session, icao24, wef_time, til_time = NULL,
-  bbox = NULL, debug_level = NULL)
+minimal_state_vector(session, icao24, wef, til = NULL, bbox = NULL)
 }
 \arguments{
 \item{session}{SSH session to OSN Impala}
 
 \item{icao24}{(Optional) Single or vector of ICAO24 ICAO 24-bit addresses}
 
-\item{wef_time}{Start of period of interest}
+\item{wef}{Start of period of interest (date or datetime)}
 
-\item{til_time}{(Optional) End of period of interest, if NULL wef_time + 1 day}
+\item{til}{(Optional) End of period of interest, if NULL wef_time + 1 day}
 
 \item{bbox}{(Optional) axis aligned bounding box like
 `c(xmin, xmax, ymin, ymax)`}
-
-\item{debug_level}{one of "DEBUG", "TRACE" or NULL (default)
-It prints usefult debug info, i.e. input args, query string,
-or traces the query results in the file `query_output.txt`.}
 }
 \value{
 a dataframe of state vectors with distinct icao24, callsign and hour

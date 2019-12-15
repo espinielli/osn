@@ -16,7 +16,7 @@ parse_impala_query_output <- function(lines) {
 
 
 impala_query <- function(session, query, cols) {
-  if (is.null(cols)) cols <- readr::cols()
+  stopifnot(!is.null(cols))
   lines <- ssh::ssh_exec_internal(
     session,
     stringr::str_glue("-q {query}", query = query)) %>%
