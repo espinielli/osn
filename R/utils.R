@@ -37,6 +37,5 @@ impala_query <- function(session, query, cols) {
     readr::read_delim(col_types = cols,
                       delim = "|",
                       na = c("", "NULL"),
-                      trim_ws = TRUE) %>%
-    janitor::clean_names()
+                      trim_ws = TRUE)
 }

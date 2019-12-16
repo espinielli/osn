@@ -6,7 +6,29 @@
 #' @param til      (Optional) End of period of interest, if NULL wef_time + 1 day
 #' @param bbox     (Optional) axis aligned bounding box like
 #'                 `c(xmin, xmax, ymin, ymax)`
-#' @return a dataframe of state vectors
+#' @return data frame of state vector data containing the following
+#'         variables (see also OSN docs about
+#'   \href{https://opensky-network.org/apidoc/rest.html#arrivals-by-airport}{State Vector}):
+#'    \tabular{lll}{
+#'      \strong{Name}       \tab \strong{Description} \tab \strong{Type} \cr
+#'      icao24              \tab ICAO 24-bit address \tab chr \cr
+#'      callsign            \tab flight's callsign   \tab chr \cr
+#'      estdepartureairport \tab Estimated departure airport \tab chr \cr
+#'      estarrivalairport   \tab Estimated arrival airport   \tab chr \cr
+#'      start               \tab Start of portion of trajectory: `min(firstseen, lastseen - duration)` \tab int \cr
+#'      firstseen           \tab first seen by OpenSky Network (UNIX timestamp)\tab int \cr
+#'      lastseen            \tab last seen by OpenSky Network (UNIX timestamp) \tab int \cr
+#'      item.time           \tab position report's time (UNIX timestamp) \tab int \cr
+#'      item.longitude      \tab position report's longitude (WSG84 decimal degrees)\tab dbl \cr
+#'      item.latitude       \tab position report's latitude (WSG84 decimal degrees) \tab dbl \cr
+#'      item.velocity       \tab ground speed of the aircraft (m/s) \tab dbl \cr
+#'      item.heading        \tab true track in decimal degrees clockwise from north (north=0°) \tab dbl \cr
+#'      item.vertrate       \tab vertical speed of the aircraft (m/s) \tab dbl \cr
+#'      item.onground       \tab TRUE if the position was retrieved from a surface position report \tab lgl \cr
+#'      item.baroaltitude   \tab position report's barometric altitude (m) \tab dbl \cr
+#'      item.geoaltitude    \tab position report's GNSS (GPS) altitude (m) \tab dbl \cr
+#'      item.hour           \tab position report's hour (UNIX timestamp) \tab int
+#'    }
 #' @export
 #'
 #' @examples
@@ -221,17 +243,21 @@ minimal_state_vector <- function(session,
 #'      \strong{Name}       \tab \strong{Description} \tab \strong{Type} \cr
 #'      icao24              \tab ICAO 24-bit address \tab chr \cr
 #'      callsign            \tab flight's callsign   \tab chr \cr
-#'      day                 \tab flight's day  \tab int \cr
-#'      firstseen           \tab first seen by OpenSky Network (UNIX timestamp)\tab int \cr
-#'      lastseen            \tab last seen by OpenSky Network (UNIX timestamp) \tab int \cr
 #'      estdepartureairport \tab Estimated departure airport \tab chr \cr
 #'      estarrivalairport   \tab Estimated arrival airport   \tab chr \cr
+#'      start               \tab Start of portion of trajectory: `min(firstseen, lastseen - duration)` \tab int \cr
+#'      firstseen           \tab first seen by OpenSky Network (UNIX timestamp)\tab int \cr
+#'      lastseen            \tab last seen by OpenSky Network (UNIX timestamp) \tab int \cr
 #'      item.time           \tab position report's time (UNIX timestamp) \tab int \cr
 #'      item.longitude      \tab position report's longitude (WSG84 decimal degrees)\tab dbl \cr
 #'      item.latitude       \tab position report's latitude (WSG84 decimal degrees) \tab dbl \cr
-#'      item.altitude       \tab position report's barometric altitude (meters) \tab dbl \cr
+#'      item.velocity       \tab ground speed of the aircraft (m/s) \tab dbl \cr
 #'      item.heading        \tab true track in decimal degrees clockwise from north (north=0°) \tab dbl \cr
-#'      item.onground       \tab TRUE if the position was retrieved from a surface position report \tab lgl
+#'      item.vertrate       \tab vertical speed of the aircraft (m/s) \tab dbl \cr
+#'      item.onground       \tab TRUE if the position was retrieved from a surface position report \tab lgl \cr
+#'      item.baroaltitude   \tab position report's barometric altitude (m) \tab dbl \cr
+#'      item.geoaltitude    \tab position report's GNSS (GPS) altitude (m) \tab dbl \cr
+#'      item.hour           \tab position report's hour (UNIX timestamp) \tab int
 #'    }
 #'
 #' @export
@@ -317,6 +343,7 @@ arrivals_state_vector <- function(
     callsign            = readr::col_character(),
     estdepartureairport = readr::col_character(),
     estarrivalairport   = readr::col_character(),
+    start               = readr::col_double(),
     firstseen           = readr::col_double(),
     lastseen            = readr::col_double(),
     time                = readr::col_double(),
@@ -332,4 +359,3 @@ arrivals_state_vector <- function(
   )
   impala_query(session, query, cols)
 }
-

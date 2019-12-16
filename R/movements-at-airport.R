@@ -1,5 +1,7 @@
 #' Get arrival tracks at airport
 #'
+#' NOTE: flight data is simplified in OSN, e.g. altitudes are discretized to multiples of 1000 feet.
+#'
 #' @param session SSH session to OSN Impala
 #' @param apt ICAO ID of airport, i.e. "EDDF" for Frankfurt
 #' @param wef (UTC) timestamp of With Effect From (included)
@@ -160,6 +162,8 @@ arrivals <- function(session, apt, wef, til=NULL) {
 }
 
 #' Get departures from airport
+#'
+#' NOTE: flight data is simplified in OSN, e.g. altitudes are discretized to multiples of 1000 feet.
 #'
 #' @param session SSH session to OSN Impala
 #' @param apt ICAO ID of airport, i.e. "EDDF" for Frankfurt

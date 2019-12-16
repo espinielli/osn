@@ -1,5 +1,6 @@
 Package: osn
-Title: Easy Access to OpenSkyNetwork Data via (SSH) Impala Session
+Title: Easy Access to OpenSkyNetwork Data via (SSH) Impala
+    Session
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Enrico",
@@ -9,21 +10,21 @@ Authors@R:
            comment = c(ORCID = "0000-0001-8584-9131"))
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
+URL: https://github.com/espinielli/osn
+BugReports: https://github.com/espinielli/osn/issues
+Imports: 
+    askpass,
+    janitor,
+    logger,
+    lubridate,
+    magrittr,
+    purrr,
+    readr,
+    rlang,
+    ssh,
+    stringi,
+    stringr,
+    tibble
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.0.1
-Imports: 
-    janitor,
-    lubridate,
-    purrr,
-    ssh,
-    readr,
-    stringi,
-    stringr,
-    tibble,
-    magrittr,
-    rlang,
-    askpass,
-    logger
-URL: https://github.com/espinielli/osn
-BugReports: https://github.com/espinielli/osn/issues
