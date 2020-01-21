@@ -38,7 +38,7 @@ data frame of flight and track data containing the following
    }
 }
 \description{
-Get departures from airport
+NOTE: flight data is simplified in OSN, e.g. altitudes are discretized to multiples of 1000 feet.
 }
 \examples{
 \dontrun{

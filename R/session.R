@@ -1,6 +1,7 @@
 #' Create an ssh session to OpenSky Network’s Impala shell.
 #'
 #' @param usr     user account
+#' @param port    port to connect to
 #' @inheritParams ssh::ssh_connect
 #'
 #' @return an SSH session
@@ -8,11 +9,22 @@
 #'
 #' @examples
 #' \dontrun{
-#' session <- connect_osn("cucu", verbose = 2)
+#' # connect directly to OSN
+#' session <- osn_connect("cucu", verbose = 2)
+#'
+#' # connect via SSH port forwarding
+#' session <- oan_connect_osn(
+#'   usr = Sys.getenv("OSN_USER"),
+#'   passwd = Sys.getenv("OSN_PASSWORD"),
+#'   port = 6666,
+#'   host = "localhost"
+#' )
 #' }
-connect_osn <- function(usr, passwd = askpass, verbose = FALSE) {
-  host <- stringr::str_glue("{usr}@data.opensky-network.org:2230", usr = usr)
-  ssh::ssh_connect(host, passwd = passwd, verbose = verbose)
+osn_connect <- function(usr, passwd = askpass,
+                        host = "data.opensky-network.org", port = 2230,
+                        verbose = FALSE) {
+  fullhost <- stringr::str_glue("{usr}@{host}:{port}")
+  ssh::ssh_connect(fullhost, passwd = passwd, verbose = verbose)
 }
 
 #' Disconnect from OpenSky Network’s Impala shell.
@@ -24,9 +36,9 @@ connect_osn <- function(usr, passwd = askpass, verbose = FALSE) {
 #'
 #' @examples
 #' \dontrun{
-#' session <- connect_osn("cucu", verbose = 2)
-#' disconnect_osn(session)
+#' session <- osn_connect("cucu", verbose = 2)
+#' osn_disconnect(session)
 #' }
-disconnect_osn <- function(session) {
+osn_disconnect <- function(session) {
   ssh::ssh_disconnect(session)
 }

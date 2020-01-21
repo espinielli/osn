@@ -19,7 +19,29 @@ state_vector(session, icao24, wef, til = NULL, bbox = NULL)
 `c(xmin, xmax, ymin, ymax)`}
 }
 \value{
-a dataframe of state vectors
+data frame of state vector data containing the following
+        variables (see also OSN docs about
+  \href{https://opensky-network.org/apidoc/rest.html#arrivals-by-airport}{State Vector}):
+   \tabular{lll}{
+     \strong{Name}       \tab \strong{Description} \tab \strong{Type} \cr
+     icao24              \tab ICAO 24-bit address \tab chr \cr
+     callsign            \tab flight's callsign   \tab chr \cr
+     estdepartureairport \tab Estimated departure airport \tab chr \cr
+     estarrivalairport   \tab Estimated arrival airport   \tab chr \cr
+     start               \tab Start of portion of trajectory: `min(firstseen, lastseen - duration)` \tab int \cr
+     firstseen           \tab first seen by OpenSky Network (UNIX timestamp)\tab int \cr
+     lastseen            \tab last seen by OpenSky Network (UNIX timestamp) \tab int \cr
+     item.time           \tab position report's time (UNIX timestamp) \tab int \cr
+     item.longitude      \tab position report's longitude (WSG84 decimal degrees)\tab dbl \cr
+     item.latitude       \tab position report's latitude (WSG84 decimal degrees) \tab dbl \cr
+     item.velocity       \tab ground speed of the aircraft (m/s) \tab dbl \cr
+     item.heading        \tab true track in decimal degrees clockwise from north (north=0°) \tab dbl \cr
+     item.vertrate       \tab vertical speed of the aircraft (m/s) \tab dbl \cr
+     item.onground       \tab TRUE if the position was retrieved from a surface position report \tab lgl \cr
+     item.baroaltitude   \tab position report's barometric altitude (m) \tab dbl \cr
+     item.geoaltitude    \tab position report's GNSS (GPS) altitude (m) \tab dbl \cr
+     item.hour           \tab position report's hour (UNIX timestamp) \tab int
+   }
 }
 \description{
 Get state vectors for a time period
@@ -30,8 +52,8 @@ session <- connect_osn("cucu", verbose = 2)
 state_vector(
    session,
    icao24 = c("3c6589", "3c6757"),
-   wef_time = "2019-04-22 00:00:00",
-   til_time = "2019-04-22 10:00:00",
+   wef = "2019-04-22 00:00:00",
+   til = "2019-04-22 10:00:00",
    bbox = c(xmin = 7.536746, xmax = 9.604390, ymin = 49.36732, ymax = 50.69920)
 )
 }
