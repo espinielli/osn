@@ -39,3 +39,7 @@ impala_query <- function(session, query, cols) {
                       na = c("", "NULL"),
                       trim_ws = TRUE)
 }
+
+
+str_enclose <- function(x, pad = " ", ...)
+  paste0( pad, x, pad, ...)
