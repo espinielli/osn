@@ -13,7 +13,7 @@
 #' session <- osn_connect("cucu", verbose = 2)
 #'
 #' # connect via SSH port forwarding
-#' session <- oan_connect_osn(
+#' session <- osn_connect_osn(
 #'   usr = Sys.getenv("OSN_USER"),
 #'   passwd = Sys.getenv("OSN_PASSWORD"),
 #'   port = 6666,

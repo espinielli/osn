@@ -159,8 +159,8 @@ state_vector <- function(session,
 #' minimal_state_vector(
 #'    session,
 #'    icao24 = c("3c6589", "3c6757"),
-#'    wef_time = "2019-04-22 00:00:00",
-#'    til_time = "2019-04-22 10:00:00",
+#'    wef = "2019-04-22 00:00:00",
+#'    til = "2019-04-22 10:00:00",
 #'    bbox = c(xmin = 7.536746, xmax = 9.604390, ymin = 49.36732, ymax = 50.69920)
 #' )
 #' }
