@@ -63,7 +63,8 @@ state_vector <- function(session,
   other_params <- " "
 
   if (!is.null(icao24)) {
-    icao24 <- str_enclose(pad = "'") %>%
+    icao24 <- icao24 %>%
+      str_enclose(pad = "'") %>%
       stringr::str_c(collapse = ", ")
     other_params <- stringr::str_glue(
       other_params,
